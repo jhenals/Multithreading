@@ -9,13 +9,13 @@ Thread - è un sottoprocesso lanciato da un processo principale. L'esecuzione de
 # Programma tradizionale vs Multithread
 
 ## Programma tradizionale
-![programma tradizionale](image.png)
+![programma tradizionale](./images/image.png)
 
-![esecuzione: un task alla volta / batch mode](image-1.png)
+![esecuzione: un task alla volta / batch mode](./images/image-1.png)
 
 ## Multithread
-![processo principale diviso in varie sottoprocessi](image-2.png)
+![processo principale diviso in varie sottoprocessi](./images/image-2.png)
 
-![esecuzione a parallelo](image-3.png)
+![esecuzione a parallelo](./images/image-3.png)
 
 src: https://www.andreaminini.com/informatica/programmazione/programmazione-multithreading
