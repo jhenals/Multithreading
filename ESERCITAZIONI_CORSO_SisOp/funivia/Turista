@@ -1,0 +1,31 @@
+package funivia;
+
+public class Turista implements Runnable {
+	
+	private Funivia funivia;
+	private int tipo;
+	
+	public Turista(Funivia funivia, int tipo) {
+		this.funivia=funivia;
+		this.tipo=tipo;
+	}
+	
+	//Getter
+	public int getTipo() {
+		return tipo;
+	}
+	
+	//Setter
+	
+
+	@Override
+	public void run() {
+		try {
+		funivia.turistaSali(tipo);
+		funivia.turistaScendi(tipo);
+		}catch(InterruptedException e) {
+			System.err.println(e);
+		}
+	}
+
+}
