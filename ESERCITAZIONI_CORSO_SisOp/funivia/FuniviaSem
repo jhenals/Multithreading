@@ -1,0 +1,106 @@
+package funivia;
+
+import java.util.concurrent.Semaphore;
+import java.util.ArrayList;
+
+public class FuniviaSem extends Funivia {
+	
+	private Semaphore mutex=new Semaphore(1); //mutua esclusione
+	private Semaphore  permettiEntrataAPiedi= new Semaphore(0);
+	private Semaphore permettiEntrataInBici= new Semaphore(0);  
+
+	private int numViaggio= -1; //per determinare il turno della funivia
+	
+	private Semaphore permettiUscitaAPiedi= new Semaphore(0);
+	private Semaphore permettiUscitaInBici= new Semaphore(0);
+	
+	private int postiOccupati=0;
+	
+	private Semaphore permettiPartenza= new Semaphore(0); //blocca il pilota a partire
+	
+	private ArrayList<Long> idTuristi= new ArrayList<>(); //struttura dati per stamapre a video i turisti
+	
+	private Semaphore permettiFine= new Semaphore(0);
+	
+	@Override
+	public void pilotaStart() throws InterruptedException {
+		numViaggio++;
+		
+		//all'inizio tutti i turisti non possono entrare : Semaforo Bloccantw
+		//con numViaggio, identifica di chi è il turno
+		//
+		if( numViaggio %2==0)
+			permettiEntrataAPiedi.release(6);
+		else
+			permettiEntrataInBici.release(3);
+		
+		permettiPartenza.acquire(); //pilota parte solo dopo l'ultimo turista è salito a bordo			
+	}
+
+	@Override
+	public void pilotaEnd() throws InterruptedException {
+		System.out.println("Viaggio numero" + numViaggio);
+		for( int i=0; i<idTuristi.size(); i++) {
+			System.out.println(idTuristi.get(i)+ " ");	
+		}
+		System.out.println("\n");
+		
+		//rilascio permesso di uscire
+		if(numViaggio%2==0) {
+			permettiUscitaAPiedi.release(6);
+		}else {
+			permettiUscitaInBici.release(3);
+		}
+		
+		permettiFine.acquire();
+		idTuristi.clear();
+	}
+
+	@Override
+	public void turistaSali(int t) throws InterruptedException {
+		//verificare il tipo di turista per sapere che tipo di semaforo acquisire
+		if( t== TURISTA_A_PIEDI) {
+			permettiEntrataAPiedi.acquire();
+			mutex.acquire();
+			postiOccupati++;
+			idTuristi.add(Thread.currentThread().getId());
+			if(postiOccupati == 6)
+				permettiPartenza.release();
+			mutex.release();
+			
+		}else { //turista in bici
+			permettiEntrataInBici.acquire();
+			mutex.acquire();
+			postiOccupati++;
+			idTuristi.add(Thread.currentThread().getId());
+			if(postiOccupati == 3)
+				permettiPartenza.release();
+			mutex.release();
+		}
+	}
+
+	@Override
+	public void turistaScendi(int t) throws InterruptedException {
+		if(t==TURISTA_A_PIEDI) {
+			permettiUscitaAPiedi.acquire();
+			mutex.acquire();
+			postiOccupati--;
+			if(postiOccupati==0)
+				permettiFine.release();
+			mutex.release();
+		}else{
+			permettiUscitaInBici.acquire();
+			mutex.acquire();
+			postiOccupati--;
+			if(postiOccupati==0)
+				permettiFine.release();
+			mutex.release();
+		}
+	}
+	
+	public static void main(String[] args) {
+		Funivia f= new FuniviaSem();
+		f.test(18,9);
+	}
+
+}
