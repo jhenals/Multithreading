@@ -7,7 +7,7 @@ Thread - è un sottoprocesso lanciato da un processo principale. L'esecuzione de
 # Programma tradizionale vs Multithread
 
 ## Programma tradizionale
-![programma tradizionale](./images/image.png)
+![programma tradizionale](../images/image.png)
 
 ![esecuzione: un task alla volta / batch mode](./images/image-1.png)
 
