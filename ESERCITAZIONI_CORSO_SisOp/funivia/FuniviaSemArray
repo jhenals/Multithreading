@@ -1,0 +1,77 @@
+package funivia;
+
+import java.util.concurrent.Semaphore;
+import java.util.ArrayList;
+
+public class FuniviaSemArray extends Funivia {
+	
+
+	private int turno= -1; //per determinare il turno della funivia
+	private int postiOccupati=0;
+	private final int[] NUM_TURISTI= {6,3};
+	
+	private Semaphore mutex=new Semaphore(1); //mutua esclusione
+	private Semaphore permettiPartenza= new Semaphore(0); //blocca il pilota a partire
+	private Semaphore permettiFine= new Semaphore(0);
+	
+	private Semaphore permettiEntrata[]= {new Semaphore(0), new Semaphore(0)}; 
+	private Semaphore permettiUscita[]= {new Semaphore(0), new Semaphore(0)}; 
+	
+	
+	private ArrayList<Long> idTuristi= new ArrayList<>(); //struttura dati per stamapre a video i turisti
+	
+	
+	
+	@Override
+	public void pilotaStart() throws InterruptedException {
+		turno= (turno+1)%2;
+		permettiEntrata[turno].release(NUM_TURISTI[turno]);		
+		permettiPartenza.acquire(); //pilota parte solo dopo l'ultimo turista è salito a bordo			
+	}
+
+	@Override
+	public void pilotaEnd() throws InterruptedException {
+		System.out.println("Fine del turno" + turno);
+		System.out.println("ID Turisti presenti: ");
+		
+		for( int i=0; i<idTuristi.size(); i++) {
+			System.out.println(idTuristi.get(i)+ " ");	
+		}
+		System.out.println("\n");
+		permettiUscita[turno].release(NUM_TURISTI[turno]);
+		
+		permettiFine.acquire();
+		idTuristi.clear();
+	}
+
+	@Override
+	public void turistaSali(int t) throws InterruptedException {
+		permettiEntrata[t].acquire();
+		
+		mutex.acquire();
+		postiOccupati += (t==0? 1:2);
+		idTuristi.add(Thread.currentThread().getId());
+		if(postiOccupati == POSTI_FUNIVIA)
+			permettiPartenza.release();
+		mutex.release();
+	}
+	
+
+	@Override
+	public void turistaScendi(int t) throws InterruptedException {
+		permettiUscita[t].acquire();
+		
+		mutex.acquire();
+		postiOccupati -= (t==0? 1:2);
+		if (postiOccupati == 0) {
+			permettiFine.release();
+		}
+		mutex.release();
+	}
+	
+	public static void main(String[] args) {
+		Funivia f= new FuniviaSemArray();
+		f.test(18,9);
+	}
+
+}
