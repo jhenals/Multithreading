@@ -1,0 +1,63 @@
+package casaDiCura;
+
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.*;
+
+public class CasaDiCuraSem extends CasaDiCura {
+	private Random rand= new Random();
+	private Semaphore operazione, sala, fineOperazione, inCoda;
+	
+	
+	public CasaDiCuraSem() {
+		operazione= new Semaphore(0, true); // all'inizio non si può entrare, solo quando il medico dà il permesso
+		sala= new Semaphore (DIM_SALA_ATTESA); //num di permesso solo 3, on c'è fairness policy perché non + detto che deve essere implementata FIFO 
+		fineOperazione= new Semaphore(0);
+		inCoda= new Semaphore(0); //il medico chiama paziente in coda
+	}
+
+	@Override
+	public void chiamaEIniziaOperazione() throws InterruptedException {
+		try {
+			operazione.release(); //chiama un nuovo paziente 
+			inCoda.acquire(); //fa un acquire per verificare se c'è un paziente in coda nella sala d'attesa
+			System.out.println("Il medico sta cominciando l'operazione");
+			TimeUnit.SECONDS.sleep(rand.nextInt(MAX_TEMPO_OPERAZIONE-MIN_TEMPO_OPERAZIONE+1)-MIN_TEMPO_OPERAZIONE); //numero random per simulare la durata dell'operazione
+		}catch( InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Override
+	public void pazienteEntra() throws InterruptedException {
+		try {
+			sala.acquire();
+			System.out.println("Il paziente "+ Thread.currentThread().getName()+ " è entrato e sta attendendo il medico");
+			inCoda.release();
+			System.out.println("Il paziente "+ Thread.currentThread().getName() + " sta entrando in sala operatorio");
+			operazione.acquire();
+		}catch(InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+	
+
+	@Override
+	public void fineOperazione() throws InterruptedException {
+		System.out.println("Il medico ha terminato l'operazione");
+		fineOperazione.release();	
+	}
+
+	@Override
+	public void pazienteEsce() throws InterruptedException {
+		try {
+			fineOperazione.acquire(); //paziente dorme fino a quando il medico notificherà che l'operazione è finita
+			sala.release();
+			System.out.println("Operazione andata a buon fine. Il paziente "+Thread.currentThread().getName()+ " sta uscendo");
+		}catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+	
+
+}
