@@ -1,0 +1,11 @@
+package casaDiCura;
+
+public abstract class CasaDiCura {
+	
+	protected static final int DIM_SALA_ATTESA=3, MIN_TEMPO_OPERAZIONE= 20, MAX_TEMPO_OPERAZIONE=40;
+	
+	public abstract void chiamaEIniziaOperazione() throws InterruptedException;
+	public abstract void fineOperazione() throws InterruptedException;
+	public abstract void pazienteEntra() throws InterruptedException;
+	public abstract void pazienteEsce() throws InterruptedException;
+}
