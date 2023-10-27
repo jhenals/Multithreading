@@ -1,0 +1,98 @@
+package casaDiCura;
+import java.util.LinkedList;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+public class CasaDiCuraLC extends CasaDiCura{
+	private Lock l= new ReentrantLock();
+	private Condition entraSalaAttesa, inizioOperazione, entraSalaOperazione, esciSala;
+
+	private LinkedList<Thread> codaSalaAttesa= new LinkedList<>();
+	private Random rand= new Random();
+	private boolean medicoLibero=false, operazioneInCorso=false;
+	
+	public CasaDiCuraLC() {
+		entraSalaAttesa= l.newCondition();
+		entraSalaOperazione= l.newCondition();
+		inizioOperazione= l.newCondition();
+		esciSala= l.newCondition();
+	}
+
+	@Override
+	public void chiamaEIniziaOperazione() throws InterruptedException {
+		l.lock();
+		try {
+			medicoLibero=true;
+			entraSalaAttesa.signalAll();
+			while( !personaInAttesa() ) inizioOperazione.await();
+			System.out.println("Il medico sta cominciando l'operazione");
+			TimeUnit.SECONDS.sleep(rand.nextInt(MAX_TEMPO_OPERAZIONE-MIN_TEMPO_OPERAZIONE+1)+MIN_TEMPO_OPERAZIONE);
+		}
+		//catch(InterruptedException e) {e.printStackTrace();}
+		finally { l.unlock(); }
+	}
+	
+	private boolean personaInAttesa() {
+		return codaSalaAttesa.size()>0;
+	}
+
+	@Override
+	public void pazienteEntra() throws InterruptedException {
+		l.lock();
+		try {
+			while ( !possoEntrareSalaAttesa() ) { entraSalaAttesa.await(); }
+			System.out.println("Il paziente "+Thread.currentThread().getName()+" è entrato e sta attendendo il medico.");
+			codaSalaAttesa.addLast(Thread.currentThread());
+			while( !possoEntrareInSalaOperatoria() ) { entraSalaOperazione.await(); }
+			System.out.println("Il paziente "+Thread.currentThread().getName()+" sta entrando in sala operatoria");
+			inizioOperazione.signal();
+			medicoLibero= false;
+			operazioneInCorso= true;
+		}finally {
+			l.unlock();
+		}
+	}
+
+	private boolean possoEntrareInSalaOperatoria() {
+		return medicoLibero && !operazioneInCorso && codaSalaAttesa.peekFirst().equals(Thread.currentThread());
+	}
+
+	private boolean possoEntrareSalaAttesa() {
+		return codaSalaAttesa.size() <= DIM_SALA_ATTESA;
+	}
+
+
+	@Override
+	public void fineOperazione() throws InterruptedException {
+		l.lock();
+		try {
+			operazioneInCorso=false;
+			medicoLibero=true;
+			System.out.println("Il medico ha terminato l'operazione");
+			esciSala.signal();
+			
+		}finally {
+			l.unlock();
+		}
+	}
+
+	
+	@Override
+	public void pazienteEsce() throws InterruptedException {
+		l.lock();
+		try {
+			while( operazioneInCorso ) {esciSala.await();}
+			codaSalaAttesa.removeFirst();
+			System.out.println("Operazione andata a buon fine. Il paziente "+Thread.currentThread().getName()+ " sta uscendo");
+			entraSalaOperazione.signalAll();
+		}finally {
+			l.unlock();
+		}
+	}
+	
+	
+
+}
