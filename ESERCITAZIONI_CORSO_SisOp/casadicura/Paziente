@@ -1,0 +1,21 @@
+package casaDiCura;
+
+public class Paziente implements Runnable {
+	private CasaDiCura cdc;
+	
+	public Paziente(CasaDiCura cdc) {
+		this.cdc=cdc;
+	}
+
+	@Override
+	public void run() {
+		try {
+			cdc.pazienteEntra();
+			cdc.pazienteEsce();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+}
