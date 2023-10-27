@@ -1,0 +1,31 @@
+package casaDiCura;
+
+import java.util.concurrent.TimeUnit;
+
+public class Medico extends Thread {
+	private final int TEMPO_PREPARAZIONE_SALA= 20;
+	
+	private CasaDiCura cdc;
+	
+	public Medico(CasaDiCura cdc) {
+		this.cdc=cdc;
+	}
+
+	@Override
+	public void run() {
+		while(true) {
+			try {
+				cdc.chiamaEIniziaOperazione();
+				cdc.fineOperazione();
+				preparaSala();
+			}catch( InterruptedException e) {
+				
+			}
+		}
+	}
+
+	private void preparaSala() throws InterruptedException {
+		TimeUnit.SECONDS.sleep(TEMPO_PREPARAZIONE_SALA); //Change to minutes
+		
+	}
+}
